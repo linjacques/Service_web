@@ -1,11 +1,45 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-# from .params import TradParams
-# from .response import TradResponse, HelloResponse
-# from .database import SessionLocal
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
 
-app = FastApi()
+from .params import TradParams
+from .response import IndexResponse, getTradResponse, postTradResponse
+from .models import Trad, Base, DicLine, Dict
+from .database import SessionLocal, engine
 
-@app.get("/test/")
-async def test():
-    return {"hello": "wolrd"}
+
+#fonction qui créer les tables (une classe représente une table dans models.py)
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.get("/", response_model=IndexResponse)
+def index():
+    return {'msg': 'Hello World !'}
+
+@app.post('/trad', response_model=postTradResponse)
+def postTrad(params: TradParams, db: Session = Depends(get_db)):
+
+    trad = "... --- ..."
+
+    trad_db = Trad(word=params.word, trad=trad, dictionnary=params.dictionnary)
+    db.add(trad_db)
+    db.commit()
+
+    return {
+        'word': params.word,
+        'dictionnary': params.dictionnary,
+        'trad': trad
+    }
+
+@app.get("/trad/{word}", response_model=getTradResponse)
+def trad(word: str):
+    return {
+        'word': word
+    }
