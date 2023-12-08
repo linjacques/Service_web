@@ -11,9 +11,9 @@ class Trad(Base):
     """
 
     id = Column(Integer, primary_key=True, index=True)
-    word = Column(String(40))
-    dictionnary = Column(String(40))
-    trad = Column(String(40))
+    word = Column(String(40)) # lettre
+    dictionnary = Column(String(40)) #
+    trad = Column(String(40)) # lettre en question en morse 
 
 #table DicLine
 class DicLine(Base):
@@ -38,6 +38,15 @@ class DicLine(Base):
 #table Dictionnaire
 class Dict(Base):
     __tablename__="dict"
+    """
+    encodeur, serait le nom approprié pour cette table! En effet, un dictionnaire correspond
+    à une méthode de traduction ex : 
 
+    user1 : "souhaite traduire en Morse"
+    -> créer un dictionnaire Morse (un seul!)
+
+    user2 : "souhaite traduire un mot en Binaire"
+    -> créer une dictionnaire en Binaire
+    """
     dictid = Column(Integer, primary_key=True, index=True)
     name = Column(String(60))
