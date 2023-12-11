@@ -6,7 +6,7 @@ from .response import IndexResponse, getTradResponse, postTradResponse
 from .models import Trad, Base, DicLine, Dict
 from .database import SessionLocal, engine
 
-
+Base.metadata.drop_all(bind=engine)
 #fonction qui créer les tables (une classe représente une table dans models.py) à partir d'une api
 Base.metadata.create_all(bind=engine)
 
@@ -67,7 +67,7 @@ def get_single_trad(word: str, db: Session = Depends(get_db)):
 
 
 @app.post("/create_dictionary", response_model=dict)
-def create_dictionary(name: str, db: Session = Depends(get_db)):
+def create_dictionary(name: str,key , valeur , db: Session = Depends(get_db)):
     # Vérifier si le dictionnaire existe déjà
     existing_dict = db.query(Dict).filter(Dict.name == name).first()
     if existing_dict:

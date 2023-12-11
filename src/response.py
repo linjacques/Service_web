@@ -10,3 +10,4 @@ class postTradResponse(BaseModel):
     word: str
     dictionnary: str
     trad: str
+    
