@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .params import TradParams ,create_dic ,delete_dic
@@ -22,7 +22,7 @@ def index():
     return {'msg': 'Hello World !'}
 
 @app.post('/traduire un mot', response_model=postTradResponse)
-def postTrad(params: TradParams, db: Session = Depends(get_db)):
+def add(params: TradParams, db: Session = Depends(get_db)):
 
     translate = list(params.word)
     id_dic = db.query(Dict).filter(Dict.name == params.dictionnary).first()
@@ -48,8 +48,8 @@ def postTrad(params: TradParams, db: Session = Depends(get_db)):
     }
 
 
-@app.post("/créer un dictionnaire")
-def addict(params: create_dic, db: Session = Depends(get_db)):
+@app.post("/créer un encodeur")
+def create(params: create_dic, db: Session = Depends(get_db)):
 
     dico = Dict(name = params.dictionnary)
     db.add(dico)
@@ -58,8 +58,8 @@ def addict(params: create_dic, db: Session = Depends(get_db)):
 
     id_dic = db.query(Dict).filter(Dict.name == params.dictionnary).first()
 
-    for encodage in params.table :
-        dictline_db = DicLine(Key=encodage.key, valeur=encodage.valeur, dictid=id_dic.dictid)
+    for encodeur in params.table :
+        dictline_db = DicLine(Key=encodeur.key, valeur=encodeur.valeur, dictid=id_dic.dictid)
         db.add(dictline_db)
         db.commit()
 
@@ -68,7 +68,7 @@ def addict(params: create_dic, db: Session = Depends(get_db)):
     }
 
 @app.post("/supprimer l'encodeur")
-def deldict(params: delete_dic, db: Session = Depends(get_db)):
+def delete(params: delete_dic, db: Session = Depends(get_db)):
 
     id_dic = db.query(Dict).filter(Dict.name == params.dictionnary).first()
     
@@ -82,4 +82,18 @@ def deldict(params: delete_dic, db: Session = Depends(get_db)):
         print("Aucun dictionnaire trouvé pour ce nom.")
     return {
         'Validation':params.dictionnary
+    }
+
+@app.get('/historique de traduction', response_model=postTradResponse)
+def read(word: str, db: Session = Depends(get_db)):
+    # Recherche la traduction du mot dans la base de données
+    trad_db = db.query(Trad).filter(Trad.word == word).first()
+
+    if trad_db is None:
+        raise HTTPException(status_code=404, detail=f"Le mot '{word}' n'a pas été trouvé dans la base de données.")
+
+    return {
+        'word': trad_db.word,
+        'dictionnary': trad_db.dictionnary,
+        'trad': trad_db.trad
     }
