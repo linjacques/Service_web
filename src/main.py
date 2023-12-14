@@ -97,3 +97,21 @@ def read(word: str, db: Session = Depends(get_db)):
         'dictionnary': trad_db.dictionnary,
         'trad': trad_db.trad
     }
+
+@app.put('/mettre à jour', response_model=postTradResponse)
+def update(word: str, new_trad: str, db: Session = Depends(get_db)):
+    # Recherchez la traduction du mot dans la base de données
+    trad_db = db.query(Trad).filter(Trad.word == word).first()
+
+    if trad_db is None:
+        raise HTTPException(status_code=404, detail=f"Le mot '{word}' n'a pas été trouvé dans la base de données.")
+
+    # Mettez à jour la traduction
+    trad_db.trad = new_trad
+    db.commit()
+
+    return {
+        'word': trad_db.word,
+        'dictionnary': trad_db.dictionnary,
+        'trad': trad_db.trad
+    }
