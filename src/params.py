@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class Item(BaseModel):
+class encodage(BaseModel):
     key: str
     valeur: str
 
@@ -14,7 +14,7 @@ class TradParams(BaseModel):
 
 class create_dic(BaseModel):
     dictionnary: str
-    table: list[Item]
+    table: list[encodage]
 
     class Config:
         orm_mode = True

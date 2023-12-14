@@ -12,7 +12,7 @@ class postTradResponse(BaseModel):
     dictionnary: str
     trad: str
 
-class Item(BaseModel):
+class encodage(BaseModel):
     key: int
     valeur: str
 

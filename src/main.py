@@ -48,7 +48,7 @@ def postTrad(params: TradParams, db: Session = Depends(get_db)):
     }
 
 
-@app.post("/créer un encodeur")
+@app.post("/créer un dictionnaire")
 def addict(params: create_dic, db: Session = Depends(get_db)):
 
     dico = Dict(name = params.dictionnary)
@@ -58,8 +58,8 @@ def addict(params: create_dic, db: Session = Depends(get_db)):
 
     id_dic = db.query(Dict).filter(Dict.name == params.dictionnary).first()
 
-    for Item in params.table :
-        dictline_db = DicLine(Key=Item.key, valeur=Item.valeur, dictid=id_dic.dictid)
+    for encodage in params.table :
+        dictline_db = DicLine(Key=encodage.key, valeur=encodage.valeur, dictid=id_dic.dictid)
         db.add(dictline_db)
         db.commit()
 
