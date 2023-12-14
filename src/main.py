@@ -67,8 +67,8 @@ def create(params: create_dic, db: Session = Depends(get_db)):
         'création réussie du dico':params.dictionnary
     }
 
-@app.post("/supprimer l'encodeur")
-def delete(params: delete_dic, db: Session = Depends(get_db)):
+@app.delete("/supprimer l'encodeur")
+def deletedic(params: delete_dic, db: Session = Depends(get_db)):
 
     id_dic = db.query(Dict).filter(Dict.name == params.dictionnary).first()
     
