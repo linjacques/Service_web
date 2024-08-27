@@ -1,13 +1,11 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from .params import TradParams
-from .response import IndexResponse, getTradResponse, postTradResponse
-from .models import Trad, Base, DicLine, Dict
+from .params import TradParams ,create_dic ,delete_dic
+from .response import IndexResponse, getTradResponse, postTradResponse, encodeur
+from .models import Trad, DicLine,Dict ,Base
 from .database import SessionLocal, engine
 
-Base.metadata.drop_all(bind=engine)
-#fonction qui créer les tables (une classe représente une table dans models.py) à partir d'une api
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -23,13 +21,21 @@ def get_db():
 def index():
     return {'msg': 'Hello World !'}
 
+@app.post('/traduire un mot', response_model=postTradResponse)
+def add(params: TradParams, db: Session = Depends(get_db)):
 
-#méthode POST, donc envoie quelques choses
-#la traduction se fait via cette url
-@app.post('/trad', response_model=postTradResponse)
-def postTrad(params: TradParams, db: Session = Depends(get_db)):
+    translate = list(params.word)
+    id_dic = db.query(Dict).filter(Dict.name == params.dictionnary).first()
+    traduction = []
 
-    trad = ""
+    # cherche une valeur correspondant à la lettre saisie, dans la table DicLine
+    for lettre in translate:
+        valeur = db.query(DicLine).filter(DicLine.Key == lettre, DicLine.dictid == id_dic.dictid).first()
+        if valeur:
+            traduction += valeur.valeur
+    
+    print(traduction)
+    trad = "".join(traduction)
 
     trad_db = Trad(word=params.word, trad=trad, dictionnary=params.dictionnary)
     db.add(trad_db)
@@ -42,40 +48,70 @@ def postTrad(params: TradParams, db: Session = Depends(get_db)):
     }
 
 
-#taper dans l'url 5000/trad/ votre mot 
-#méthode GET, donc récupère quelques choses!
-@app.get("/trad/{word}", response_model=getTradResponse)
-def trad(word: str):
+@app.post("/créer un encodeur")
+def create(params: create_dic, db: Session = Depends(get_db)):
+
+    dico = Dict(name = params.dictionnary)
+    db.add(dico)
+    db.commit()
+    db.refresh(dico)
+
+    id_dic = db.query(Dict).filter(Dict.name == params.dictionnary).first()
+
+    for encodeur in params.table :
+        dictline_db = DicLine(Key=encodeur.key, valeur=encodeur.valeur, dictid=id_dic.dictid)
+        db.add(dictline_db)
+        db.commit()
+
     return {
-        'word': word
+        'création réussie du dico':params.dictionnary
     }
 
-#Nouvelle route GET pour récupérer toutes les traductions dans la base de données
-@app.get("/all_trad", response_model=list[getTradResponse])
-def get_all_trad(db: Session = Depends(get_db)):
-    trads = db.query(Trad).all()
-    return [{"word": trad.word, "trad": trad.trad, "dictionnary": trad.dictionnary} for trad in trads]
+@app.delete("/supprimer l'encodeur")
+def deletedic(params: delete_dic, db: Session = Depends(get_db)):
 
-#Nouvelle route GET pour récupérer les traductions d'un mot spécifique
-@app.get("/trad/{word}", response_model=getTradResponse)
-def get_single_trad(word: str, db: Session = Depends(get_db)):
-    trad = db.query(Trad).filter(Trad.word == word).first()
-    if trad:
-        return {"word": trad.word, "trad": trad.trad, "dictionnary": trad.dictionnary}
+    id_dic = db.query(Dict).filter(Dict.name == params.dictionnary).first()
+    
+    if id_dic:
+        delite = db.query(DicLine).filter(DicLine.dictid == id_dic.dictid).all()
+        for line in delite:
+            db.delete(line)
+        db.delete(id_dic)
+        db.commit()
     else:
-        return {"message": "Traduction introuvable"}
+        print("Aucun dictionnaire trouvé pour ce nom.")
+    return {
+        'Validation':params.dictionnary
+    }
 
+@app.get('/chercher la traduction', response_model=postTradResponse)
+def read(word: str, db: Session = Depends(get_db)):
+    # Recherche la traduction du mot dans la base de données
+    trad_db = db.query(Trad).filter(Trad.word == word).first()
 
-@app.post("/create_dictionary", response_model=dict)
-def create_dictionary(name: str,key , valeur , db: Session = Depends(get_db)):
-    # Vérifier si le dictionnaire existe déjà
-    existing_dict = db.query(Dict).filter(Dict.name == name).first()
-    if existing_dict:
-        raise HTTPException(status_code=400, detail="Le dictionnaire existe déjà")
+    if trad_db is None:
+        raise HTTPException(status_code=404, detail=f"Le mot '{word}' n'a pas été trouvé dans la base de données.")
 
-    # ajoute le dictionnaire dans la bdd
-    dic_db = Dict(name=name)
-    db.add(dic_db)
+    return {
+        'word': trad_db.word,
+        'dictionnary': trad_db.dictionnary,
+        'trad': trad_db.trad
+    }
+
+@app.put('/mettre à jour', response_model=postTradResponse)
+def update(word: str, new_trad: str, db: Session = Depends(get_db)):
+    # Recherchez la traduction du mot dans la base de données
+    trad_db = db.query(Trad).filter(Trad.word == word).first()
+
+    if trad_db is None:
+        raise HTTPException(status_code=404, detail=f"Le mot '{word}' n'a pas été trouvé dans la base de données.")
+
+    # Mettez à jour la traduction
+    trad_db.trad = new_trad
     db.commit()
 
-    return {"message": f"Dictionnaire '{name}' créé avec succès"}
+    return {
+        'word': trad_db.word,
+        'dictionnary': trad_db.dictionnary,
+        'trad': trad_db.trad
+    }

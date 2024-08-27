@@ -33,10 +33,7 @@ class Dict(Base):
     -> créer une dictionnaire en Binaire
     """
 
-    def __init__(self, name):
-        self.name = name
-        dictline = [key, valeur]
-
+    
     dictid = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(60))
 
@@ -55,11 +52,7 @@ class DicLine(Base):
 
     etc.
     """
-    def __init__(self, key, valeur, dictid):
-        self.key = key
-        self.valeur = valeur
-        self.dictid = dictid
-
+  
     id = Column(Integer, primary_key=True, index=True) 
     Key = Column(String(40))# a
     valeur = Column(String(40))# .-

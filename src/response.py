@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class IndexResponse(BaseModel):
     msg: str
 
@@ -10,4 +11,11 @@ class postTradResponse(BaseModel):
     word: str
     dictionnary: str
     trad: str
+
+class encodeur(BaseModel):
+    key: int
+    valeur: str
+
+    class Config:
+        orm_mode = True
     
